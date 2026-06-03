@@ -13,18 +13,29 @@ class VerifySupabaseToken
 {
     public function handle(Request $request, Closure $next): Response
     {
+        if (auth()->check()) {
+            return $next($request);
+        }
+
         $token = $request->bearerToken();
 
         if (!$token) {
-            return response()->json(['message' => 'Unauthenticated'], 401);
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Unauthenticated'], 401);
+            }
+            return redirect('/login');
         }
 
-        $response = Http::withToken($token)
+        $response = Http::withoutVerifying()
+            ->withToken($token)
             ->withHeaders(['apikey' => config('services.supabase.anon_key')])
             ->get(config('services.supabase.url') . '/auth/v1/user');
 
         if ($response->failed()) {
-            return response()->json(['message' => 'Invalid or expired token'], 401);
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Invalid or expired token'], 401);
+            }
+            return redirect('/login');
         }
 
         $supabaseUser = $response->json();

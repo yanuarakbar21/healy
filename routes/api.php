@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AssessmentController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\ProfileController;

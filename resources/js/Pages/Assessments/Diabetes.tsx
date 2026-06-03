@@ -1,19 +1,18 @@
 import { Head } from '@inertiajs/react';
 import { useState } from 'react';
 import AppLayout from '@/Layouts/AppLayout';
-import Card from '@/Components/ui/Card';
-import Button from '@/Components/ui/Button';
-import Chip from '@/Components/ui/Chip';
 
 const questions = [
-    { id: 'age_group', text: 'What is your age group?', options: [['1', 'Under 25'], ['2', '25-34'], ['3', '35-44'], ['4', '45-54'], ['5', '55 or older']] },
-    { id: 'family_history', text: 'Do you have a family history of diabetes?', options: [['no', 'No'], ['yes', 'Yes']] },
-    { id: 'activity', text: 'How would you describe your physical activity level?', options: [['1', 'Active (regular exercise)'], ['2', 'Moderate (occasional)'], ['3', 'Sedentary (rarely)']] },
-    { id: 'diet', text: 'How would you describe your diet?', options: [['1', 'Balanced with plenty of vegetables'], ['2', 'Moderate'], ['3', 'High in sugar/processed foods']] },
-    { id: 'waist', text: 'How would you describe your waist circumference?', options: [['1', 'Healthy range'], ['2', 'Slightly elevated'], ['3', 'Significantly elevated']] },
-    { id: 'hypertension', text: 'Do you have high blood pressure?', options: [['no', 'No'], ['yes', 'Yes']] },
-    { id: 'high_blood_sugar', text: 'Have you ever been told you have high blood sugar?', options: [['no', 'No'], ['yes', 'Yes']] },
+    { id: 'age_group', text: 'Berapa usia Anda?', category: 'Data Diri', options: [['1', 'Di bawah 25 tahun', ''], ['2', '25 - 34 tahun', ''], ['3', '35 - 44 tahun', ''], ['4', '45 - 54 tahun', ''], ['5', '55 tahun atau lebih', '']] },
+    { id: 'family_history', text: 'Apakah Anda memiliki riwayat diabetes dalam keluarga?', category: 'Riwayat Keluarga', options: [['no', 'Tidak', ''], ['yes', 'Ya', '']] },
+    { id: 'activity', text: 'Bagaimana tingkat aktivitas fisik Anda?', category: 'Gaya Hidup', options: [['1', 'Aktif (olahraga rutin)', ''], ['2', 'Sedang (kadang-kadang)', ''], ['3', 'Kurang (jarang bergerak)', '']] },
+    { id: 'diet', text: 'Bagaimana pola makan Anda sehari-hari?', category: 'Pola Makan', options: [['1', 'Seimbang dengan banyak sayur', ''], ['2', 'Cukup bervariasi', ''], ['3', 'Tinggi gula/makanan olahan', '']] },
+    { id: 'waist', text: 'Bagaimana lingkar pinggang Anda?', category: 'Antropometri', options: [['1', 'Dalam rentang sehat', ''], ['2', 'Sedikit di atas normal', ''], ['3', 'Jauh di atas normal', '']] },
+    { id: 'hypertension', text: 'Apakah Anda memiliki tekanan darah tinggi?', category: 'Kondisi Medis', options: [['no', 'Tidak', ''], ['yes', 'Ya', '']] },
+    { id: 'high_blood_sugar', text: 'Apakah Anda pernah diberi tahu memiliki gula darah tinggi?', category: 'Kondisi Medis', options: [['no', 'Tidak', ''], ['yes', 'Ya', '']] },
 ];
+
+const icons = ['person', 'family_history', 'directions_run', 'nutrition', 'straighten', 'bloodpressure', 'monitor_heart'];
 
 export default function Diabetes() {
     const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -25,10 +24,10 @@ export default function Diabetes() {
 
     const handleAnswer = (value: string) => {
         setAnswers(prev => ({ ...prev, [current.id]: value }));
-        if (step < questions.length - 1) {
-            setStep(step + 1);
-        }
+        if (step < questions.length - 1) setStep(step + 1);
     };
+
+    const handlePrev = () => { if (step > 0) setStep(step - 1); };
 
     const handleSubmit = async () => {
         setLoading(true);
@@ -40,25 +39,31 @@ export default function Diabetes() {
             });
             const data = await res.json();
             setResult(data);
-        } catch { /* ignore */ } finally {
-            setLoading(false);
-        }
+        } catch { /* ignore */ } finally { setLoading(false); }
     };
 
     if (result) {
         return (
             <AppLayout>
-                <Head title="Diabetes Risk - Healy" />
+                <Head title="Skrining Diabetes - Healy" />
                 <div className="max-w-xl mx-auto">
-                    <Card>
-                        <div className="text-center">
-                            <p className="text-sm text-on-surface-variant">Your Diabetes Risk Score</p>
-                            <p className="text-5xl font-bold text-primary font-[family-name:var(--font-family-heading)] my-3">{result.score}</p>
-                            <Chip variant={result.category === 'low' ? 'primary' : result.category === 'moderate' ? 'secondary' : 'tertiary'}>{result.category} risk</Chip>
-                            <p className="text-sm text-on-surface mt-4 leading-relaxed">{result.recommendation}</p>
-                            <Button className="mt-6" onClick={() => { setResult(null); setStep(0); setAnswers({}); }}>Retake Test</Button>
+                    <div className="bg-surface-container-lowest rounded-lg p-lg md:p-xl shadow-[0_30px_60px_-15px_rgba(2,103,131,0.06)] text-center">
+                        <div className="w-16 h-16 bg-primary-container/20 rounded-full flex items-center justify-center mx-auto mb-md">
+                            <span className="material-symbols-outlined text-primary text-3xl">bloodtype</span>
                         </div>
-                    </Card>
+                        <p className="font-label-md text-label-md text-on-surface-variant">Skor Risiko Diabetes Anda</p>
+                        <p className="font-display-lg text-display-lg text-primary my-3">{result.score}</p>
+                        <span className={`inline-block px-sm py-xs rounded-full font-label-sm font-bold ${
+                            result.category === 'low' ? 'bg-primary/10 text-primary' :
+                            result.category === 'moderate' ? 'bg-secondary/10 text-secondary' :
+                            'bg-error-container/50 text-error'
+                        }`}>{result.category === 'low' ? 'Rendah' : result.category === 'moderate' ? 'Sedang' : 'Tinggi'}</span>
+                        <p className="font-body-md text-body-md text-on-surface mt-4 leading-relaxed">{result.recommendation}</p>
+                        <button onClick={() => { setResult(null); setStep(0); setAnswers({}); }}
+                            className="mt-6 px-xl py-md bg-primary text-on-primary rounded-full font-label-md shadow-lg hover:scale-105 active:scale-95 transition-all">
+                            Ulangi Tes
+                        </button>
+                    </div>
                 </div>
             </AppLayout>
         );
@@ -66,31 +71,66 @@ export default function Diabetes() {
 
     return (
         <AppLayout>
-            <Head title="Diabetes Risk - Healy" />
-            <div className="max-w-xl mx-auto space-y-6">
-                <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold text-on-surface font-[family-name:var(--font-family-heading)]">Diabetes Risk Screening</h1>
-                    <span className="text-sm text-on-surface-variant">Question {step + 1} of {questions.length}</span>
+            <Head title="Skrining Diabetes - Healy" />
+            <div className="max-w-3xl mx-auto">
+                <div className="mb-xl text-center">
+                    <div className="flex justify-between items-end mb-sm">
+                        <span className="font-label-md text-label-md text-primary font-bold">Langkah {step + 1} dari {questions.length}</span>
+                        <span className="font-label-md text-label-md text-on-surface-variant">{Math.round(((step + 1) / questions.length) * 100)}% Selesai</span>
+                    </div>
+                    <div className="h-4 w-full bg-surface-container-high rounded-full overflow-hidden">
+                        <div className="h-full bg-primary-container rounded-full progress-glow transition-all duration-700 ease-out" style={{ width: `${((step + 1) / questions.length) * 100}%` }} />
+                    </div>
                 </div>
-                <Card>
-                    <p className="text-base font-semibold text-on-surface mb-6">{current.text}</p>
-                    <div className="space-y-3">
+
+                <div className="bg-surface-container-lowest rounded-lg p-lg md:p-xl shadow-[0_30px_60px_-15px_rgba(2,103,131,0.06)]">
+                    <div className="mb-lg">
+                        <span className="inline-block px-sm py-xs bg-tertiary-fixed text-on-tertiary-fixed-variant rounded-full font-label-sm uppercase tracking-wider mb-md">
+                            {current.category}
+                        </span>
+                        <div className="flex items-start gap-md">
+                            <div className="w-12 h-12 flex items-center justify-center rounded-full bg-primary-container/20 shrink-0">
+                                <span className="material-symbols-outlined text-primary">{icons[step]}</span>
+                            </div>
+                            <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface leading-tight">
+                                {current.text}
+                            </h2>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-md">
                         {current.options.map(([value, label]) => (
-                            <button
-                                key={value}
-                                onClick={() => handleAnswer(value)}
-                                className="w-full text-left px-5 py-4 rounded-2xl border border-outline-variant hover:border-primary hover:bg-primary/5 transition-colors text-sm font-[family-name:var(--font-family-body)]"
-                            >
-                                {label}
+                            <button key={value} onClick={() => handleAnswer(value)}
+                                className={`group flex items-center p-md border-[1.5px] border-outline-variant rounded-lg bg-surface transition-all duration-300 hover:border-primary hover:bg-surface-container-low text-left ${
+                                    answers[current.id] === value ? 'border-primary bg-primary/5' : ''
+                                }`}>
+                                <div className="flex-1">
+                                    <p className="font-body-lg text-body-lg text-on-surface font-semibold">{label}</p>
+                                </div>
+                                <span className={`material-symbols-outlined transition-colors ${
+                                    answers[current.id] === value ? 'text-primary' : 'text-outline-variant'
+                                }`} style={{ fontVariationSettings: answers[current.id] === value ? "'FILL' 1" : "'FILL' 0" }}>
+                                    check_circle
+                                </span>
                             </button>
                         ))}
                     </div>
-                    {step === questions.length - 1 && (
-                        <Button className="w-full mt-6" onClick={handleSubmit} disabled={loading}>
-                            {loading ? 'Calculating...' : 'See Results'}
-                        </Button>
+                </div>
+
+                <div className="mt-lg flex justify-between items-center w-full">
+                    <button onClick={handlePrev} disabled={step === 0}
+                        className="flex items-center gap-xs px-lg py-md rounded-full border border-outline text-on-surface font-label-md hover:bg-surface-container-low transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">
+                        <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                        Sebelumnya
+                    </button>
+                    {step === questions.length - 1 ? (
+                        <button onClick={handleSubmit} disabled={loading || !answers[current.id]}
+                            className="flex items-center gap-xs px-xl py-md rounded-full bg-primary text-on-primary font-label-md shadow-lg transition-all hover:opacity-90 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">
+                            {loading ? 'Menghitung...' : 'Lihat Hasil'}
+                        </button>
+                    ) : (
+                        <div />
                     )}
-                </Card>
+                </div>
             </div>
         </AppLayout>
     );

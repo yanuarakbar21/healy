@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AssessmentController;
 use App\Http\Controllers\ChatController;
@@ -9,6 +10,18 @@ use App\Http\Controllers\ProfileController;
 Route::get('/', function () {
     return inertia('Welcome');
 });
+
+Route::get('/login', function () {
+    return inertia('Auth/Login');
+})->name('login');
+
+Route::get('/register', function () {
+    return inertia('Auth/Register');
+})->name('register');
+
+Route::post('/api/auth/callback', [AuthController::class, 'callback'])->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+Route::get('/api/auth/me', [AuthController::class, 'me']);
+Route::post('/logout', [AuthController::class, 'logout']);
 
 Route::middleware('supabase.auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
