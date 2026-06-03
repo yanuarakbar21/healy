@@ -18,4 +18,6 @@ Route::middleware('supabase.auth')->group(function () {
     Route::get('/assessments/stress', [AssessmentController::class, 'stress'])->name('assessments.stress');
     Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::get('/admin', [\App\Http\Controllers\AdminController::class, 'index'])
+        ->name('admin.dashboard');
 });
