@@ -48,20 +48,20 @@ export default function Stress() {
             <AppLayout>
                 <Head title="Tingkat Stres - Healy" />
                 <div className="max-w-xl mx-auto">
-                    <div className="bg-surface-container-lowest rounded-lg p-lg md:p-xl shadow-[0_30px_60px_-15px_rgba(2,103,131,0.06)] text-center">
-                        <div className="w-16 h-16 bg-tertiary-container/20 rounded-full flex items-center justify-center mx-auto mb-md">
+                    <div className="bg-surface-container-lowest rounded-lg p-6 md:p-10 shadow-[0_30px_60px_-15px_rgba(2,103,131,0.06)] text-center">
+                        <div className="w-16 h-16 bg-tertiary-container/20 rounded-full flex items-center justify-center mx-auto mb-6">
                             <span className="material-symbols-outlined text-tertiary text-3xl">psychology</span>
                         </div>
-                        <p className="font-label-md text-label-md text-on-surface-variant">Tingkat Stres Anda (PSS-10)</p>
-                        <p className="font-display-lg text-display-lg text-primary my-3">{result.score}<span className="text-headline-md">/40</span></p>
-                        <span className={`inline-block px-sm py-xs rounded-full font-label-sm font-bold ${
+                        <p className="font-label-md text-on-surface-variant">Tingkat Stres Anda (PSS-10)</p>
+                        <p className="font-display-lg text-primary my-3">{result.score}<span className="font-headline-md">/40</span></p>
+                        <span className={`inline-block px-3 py-1 rounded-full font-label-sm font-bold ${
                             result.category === 'low' ? 'bg-primary/10 text-primary' :
                             result.category === 'moderate' ? 'bg-secondary/10 text-secondary' :
                             'bg-error-container/50 text-error'
                         }`}>{result.category === 'low' ? 'Rendah' : result.category === 'moderate' ? 'Sedang' : 'Tinggi'}</span>
-                        <p className="font-body-md text-body-md text-on-surface mt-4 leading-relaxed">{result.recommendation}</p>
+                        <p className="font-body-md text-on-surface mt-4 leading-relaxed">{result.recommendation}</p>
                         <button onClick={() => { setResult(null); setAnswers({}); }}
-                            className="mt-6 px-xl py-md bg-primary text-on-primary rounded-full font-label-md shadow-lg hover:scale-105 active:scale-95 transition-all">
+                            className="mt-6 px-16 py-6 bg-primary text-on-primary rounded-full font-label-md shadow-lg hover:scale-105 active:scale-95 transition-all">
                             Ulangi Tes
                         </button>
                     </div>
@@ -74,12 +74,12 @@ export default function Stress() {
         <AppLayout>
             <Head title="Tingkat Stres - Healy" />
             <div className="max-w-xl mx-auto space-y-6">
-                <h1 className="font-headline-lg text-headline-lg text-on-surface">Penilaian Tingkat Stres</h1>
-                <p className="font-body-md text-body-md text-on-surface-variant">Dalam sebulan terakhir, seberapa sering Anda...</p>
+                <h1 className="font-headline-lg text-on-surface">Penilaian Tingkat Stres</h1>
+                <p className="font-body-md text-on-surface-variant">Dalam sebulan terakhir, seberapa sering Anda...</p>
 
                 {stressQuestions.map((q, i) => (
-                    <div key={i} className="bg-surface-container-lowest rounded-lg p-md shadow-[0_10px_30px_-5px_rgba(2,103,131,0.06)]">
-                        <p className="font-body-md text-body-md text-on-surface font-semibold mb-4">{i + 1}. {q}</p>
+                    <div key={i} className="bg-surface-container-lowest rounded-lg p-6 shadow-[0_10px_30px_-5px_rgba(2,103,131,0.06)]">
+                        <p className="font-body-md text-on-surface font-semibold mb-4">{i + 1}. {q}</p>
                         <div className="grid grid-cols-5 gap-2">
                             {scale.map(([value, label]) => (
                                 <button key={value} onClick={() => setAnswers(prev => ({ ...prev, [`q${i + 1}`]: value }))}

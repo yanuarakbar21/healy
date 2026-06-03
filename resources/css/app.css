@@ -48,112 +48,6 @@
     --color-background: #faf9f6;
     --color-on-background: #1a1c1a;
     --color-surface-variant: #e3e2e0;
-
-    --font-family-display-lg: 'Quicksand', sans-serif;
-    --font-family-headline-lg: 'Quicksand', sans-serif;
-    --font-family-headline-lg-mobile: 'Quicksand', sans-serif;
-    --font-family-headline-md: 'Quicksand', sans-serif;
-    --font-family-body-lg: 'Plus Jakarta Sans', sans-serif;
-    --font-family-body-md: 'Plus Jakarta Sans', sans-serif;
-    --font-family-label-md: 'Plus Jakarta Sans', sans-serif;
-    --font-family-label-sm: 'Plus Jakarta Sans', sans-serif;
-
-    --font-size-display-lg: 48px;
-    --font-lineHeight-display-lg: 56px;
-    --font-weight-display-lg: 700;
-    --font-letterSpacing-display-lg: -0.02em;
-
-    --font-size-headline-lg: 32px;
-    --font-lineHeight-headline-lg: 40px;
-    --font-weight-headline-lg: 600;
-
-    --font-size-headline-lg-mobile: 28px;
-    --font-lineHeight-headline-lg-mobile: 36px;
-    --font-weight-headline-lg-mobile: 600;
-
-    --font-size-headline-md: 24px;
-    --font-lineHeight-headline-md: 32px;
-    --font-weight-headline-md: 600;
-
-    --font-size-body-lg: 18px;
-    --font-lineHeight-body-lg: 28px;
-    --font-weight-body-lg: 400;
-
-    --font-size-body-md: 16px;
-    --font-lineHeight-body-md: 24px;
-    --font-weight-body-md: 400;
-
-    --font-size-label-md: 14px;
-    --font-lineHeight-label-md: 20px;
-    --font-weight-label-md: 600;
-    --font-letterSpacing-label-md: 0.01em;
-
-    --font-size-label-sm: 12px;
-    --font-lineHeight-label-sm: 16px;
-    --font-weight-label-sm: 500;
-
-    --radius-sm: 0.5rem;
-    --radius-md: 1.5rem;
-    --radius-lg: 2rem;
-    --radius-xl: 3rem;
-}
-
-@utility font-display-lg {
-    font-family: var(--font-family-display-lg);
-    font-size: var(--font-size-display-lg);
-    line-height: var(--font-lineHeight-display-lg);
-    font-weight: var(--font-weight-display-lg);
-    letter-spacing: var(--font-letterSpacing-display-lg);
-}
-
-@utility font-headline-lg {
-    font-family: var(--font-family-headline-lg);
-    font-size: var(--font-size-headline-lg);
-    line-height: var(--font-lineHeight-headline-lg);
-    font-weight: var(--font-weight-headline-lg);
-}
-
-@utility font-headline-lg-mobile {
-    font-family: var(--font-family-headline-lg-mobile);
-    font-size: var(--font-size-headline-lg-mobile);
-    line-height: var(--font-lineHeight-headline-lg-mobile);
-    font-weight: var(--font-weight-headline-lg-mobile);
-}
-
-@utility font-headline-md {
-    font-family: var(--font-family-headline-md);
-    font-size: var(--font-size-headline-md);
-    line-height: var(--font-lineHeight-headline-md);
-    font-weight: var(--font-weight-headline-md);
-}
-
-@utility font-body-lg {
-    font-family: var(--font-family-body-lg);
-    font-size: var(--font-size-body-lg);
-    line-height: var(--font-lineHeight-body-lg);
-    font-weight: var(--font-weight-body-lg);
-}
-
-@utility font-body-md {
-    font-family: var(--font-family-body-md);
-    font-size: var(--font-size-body-md);
-    line-height: var(--font-lineHeight-body-md);
-    font-weight: var(--font-weight-body-md);
-}
-
-@utility font-label-md {
-    font-family: var(--font-family-label-md);
-    font-size: var(--font-size-label-md);
-    line-height: var(--font-lineHeight-label-md);
-    font-weight: var(--font-weight-label-md);
-    letter-spacing: var(--font-letterSpacing-label-md);
-}
-
-@utility font-label-sm {
-    font-family: var(--font-family-label-sm);
-    font-size: var(--font-size-label-sm);
-    line-height: var(--font-lineHeight-label-sm);
-    font-weight: var(--font-weight-label-sm);
 }
 
 @layer base {
@@ -166,6 +60,51 @@
     h1, h2, h3, h4, h5, h6 {
         font-family: 'Quicksand', sans-serif;
     }
+}
+
+.font-display-lg {
+    font-family: 'Quicksand', sans-serif;
+    font-size: 48px;
+    line-height: 56px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+.font-headline-lg {
+    font-family: 'Quicksand', sans-serif;
+    font-size: 32px;
+    line-height: 40px;
+    font-weight: 600;
+}
+.font-headline-md {
+    font-family: 'Quicksand', sans-serif;
+    font-size: 24px;
+    line-height: 32px;
+    font-weight: 600;
+}
+.font-body-lg {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 18px;
+    line-height: 28px;
+    font-weight: 400;
+}
+.font-body-md {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 400;
+}
+.font-label-md {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+.font-label-sm {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 500;
 }
 
 .glass-card {
