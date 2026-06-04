@@ -1,11 +1,62 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import { useEffect, useMemo, useState } from 'react';
 import AppLayout from '@/Layouts/AppLayout';
 import type { UserProfile, HealthAssessment } from '@/types';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 interface DashboardProps {
     profile: UserProfile;
     latestAssessments: Record<string, HealthAssessment>;
+    latestTips: Array<{
+        id: string;
+        title: string;
+        title_id: string | null;
+        slug: string;
+        description: string;
+        description_id: string | null;
+        image_url: string | null;
+        source: string;
+        source_url: string;
+        category: string;
+        published_at: string;
+    }>;
     historyByType: Array<{ type: string; data: Array<{ score: number; category: string; taken_at: string }> }>;
+}
+
+const categoryGradients: Record<string, string> = {
+    disease: 'from-red-500/20 to-rose-500/10',
+    nutrition: 'from-green-600/20 to-emerald-500/10',
+    mental: 'from-violet-500/20 to-purple-500/10',
+    exercise: 'from-orange-500/20 to-amber-500/10',
+    general: 'from-teal-500/20 to-cyan-500/10',
+};
+
+const categoryAnimatedGradients: Record<string, string> = {
+    disease: 'animated-grad-disease',
+    nutrition: 'animated-grad-nutrition',
+    mental: 'animated-grad-mental',
+    exercise: 'animated-grad-exercise',
+    general: 'animated-grad-general',
+};
+
+const categoryIcons: Record<string, string> = {
+    disease: 'coronavirus',
+    nutrition: 'nutrition',
+    mental: 'psychology',
+    exercise: 'exercise',
+    general: 'info',
+};
+
+function timeAgo(dateStr: string): string {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'baru saja';
+    if (mins < 60) return `${mins} menit lalu`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours} jam lalu`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days} hari lalu`;
+    return new Date(dateStr).toLocaleDateString('id-ID');
 }
 
 function getDateIndonesia() {
@@ -15,16 +66,37 @@ function getDateIndonesia() {
     return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-export default function Dashboard({ profile, latestAssessments }: DashboardProps) {
+export default function Dashboard({ profile, latestAssessments, latestTips, historyByType }: DashboardProps) {
     const name = profile?.full_name?.split(' ')[0] ?? 'Pengguna';
     const hasProfile = !!(profile?.full_name && profile?.birth_date);
     const hasAssessments = Object.keys(latestAssessments).length > 0;
+    const [tipsUpdatedAt, setTipsUpdatedAt] = useState(Date.now());
 
-    const tips = [
-        { label: 'Mental Health', title: '5 Menit Meditasi untuk Mengurangi Stres', desc: 'Latihan pernapasan sederhana dapat membantu menurunkan tingkat kortisol Anda...', icon: 'self_improvement', color: 'text-secondary' },
-        { label: 'Nutrition', title: 'Pilihan Karbohidrat Rendah Glikemik', desc: 'Menjaga kadar gula darah tetap stabil dengan pemilihan jenis makanan yang tepat...', icon: 'nutrition', color: 'text-primary' },
-        { label: 'Exercise', title: 'Pentingnya Istirahat Aktif', desc: 'Berjalan kaki ringan di antara sesi kerja dapat meningkatkan fokus dan metabolisme...', icon: 'directions_walk', color: 'text-tertiary' },
-    ];
+    const chartData = useMemo(() => {
+        const dateMap = new Map<string, Record<string, number>>();
+        historyByType.forEach(({ type, data }) => {
+            data.forEach(({ score, taken_at }) => {
+                const d = new Date(taken_at);
+                const key = `${d.getDate()}/${d.getMonth() + 1}`;
+                if (!dateMap.has(key)) dateMap.set(key, {});
+                dateMap.get(key)![type] = score;
+            });
+        });
+        return Array.from(dateMap.entries())
+            .sort(([a], [b]) => {
+                const [da, ma] = a.split('/').map(Number);
+                const [db, mb] = b.split('/').map(Number);
+                return da + ma * 31 - (db + mb * 31);
+            })
+            .map(([date, scores]) => ({ date, ...scores }));
+    }, [historyByType]);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            router.reload({ only: ['latestTips'], onSuccess: () => setTipsUpdatedAt(Date.now()) });
+        }, 5 * 60 * 1000);
+        return () => clearInterval(interval);
+    }, []);
 
     return (
         <AppLayout>
@@ -72,9 +144,9 @@ export default function Dashboard({ profile, latestAssessments }: DashboardProps
                             <div className="p-2 bg-secondary-container/30 rounded-lg">
                                 <span className="material-symbols-outlined text-secondary">bloodtype</span>
                             </div>
-                            {latestAssessments.diabetes && (
+                            {latestAssessments.diabetes_risk && (
                                 <span className="bg-secondary/10 text-secondary px-3 py-1 rounded-full font-label-sm font-bold">
-                                    {latestAssessments.diabetes.category === 'low' ? 'Rendah' : latestAssessments.diabetes.category === 'moderate' ? 'Sedang' : 'Tinggi'}
+                                    {latestAssessments.diabetes_risk.category === 'low' ? 'Rendah' : latestAssessments.diabetes_risk.category === 'moderate' ? 'Sedang' : 'Tinggi'}
                                 </span>
                             )}
                         </div>
@@ -82,11 +154,11 @@ export default function Dashboard({ profile, latestAssessments }: DashboardProps
                             <p className="text-on-surface-variant font-label-md uppercase tracking-wider">Risiko Diabetes</p>
                             <div className="flex items-baseline gap-1 mt-1">
                                 <span className="font-headline-lg text-on-surface">
-                                    {latestAssessments.diabetes ? latestAssessments.diabetes.category : '-'}
+                                    {latestAssessments.diabetes_risk ? latestAssessments.diabetes_risk.category : '-'}
                                 </span>
                             </div>
                         </div>
-                        {latestAssessments.diabetes && (
+                        {latestAssessments.diabetes_risk && (
                             <div className="mt-6 flex items-center gap-1">
                                 <span className="material-symbols-outlined text-primary text-[18px]">trending_down</span>
                                 <p className="text-on-surface-variant font-label-sm">Pantau rutin untuk hasil terbaik</p>
@@ -99,9 +171,9 @@ export default function Dashboard({ profile, latestAssessments }: DashboardProps
                             <div className="p-2 bg-tertiary-container/20 rounded-lg">
                                 <span className="material-symbols-outlined text-tertiary">psychology</span>
                             </div>
-                            {latestAssessments.stress && (
+                            {latestAssessments.stress_pss10 && (
                                 <span className="bg-tertiary/10 text-tertiary px-3 py-1 rounded-full font-label-sm font-bold">
-                                    {latestAssessments.stress.category === 'low' ? 'Rendah' : latestAssessments.stress.category === 'moderate' ? 'Sedang' : 'Tinggi'}
+                                    {latestAssessments.stress_pss10.category === 'low' ? 'Rendah' : latestAssessments.stress_pss10.category === 'moderate' ? 'Sedang' : 'Tinggi'}
                                 </span>
                             )}
                         </div>
@@ -109,13 +181,13 @@ export default function Dashboard({ profile, latestAssessments }: DashboardProps
                             <p className="text-on-surface-variant font-label-md uppercase tracking-wider">Tingkat Stres</p>
                             <div className="flex items-baseline gap-1 mt-1">
                                 <span className="font-headline-lg text-on-surface">
-                                    {latestAssessments.stress ? latestAssessments.stress.score : '-'}
+                                    {latestAssessments.stress_pss10 ? latestAssessments.stress_pss10.score : '-'}
                                 </span>
-                                <span className="text-on-surface-variant font-body-md">/100</span>
+                                <span className="text-on-surface-variant font-body-md">/40</span>
                             </div>
                         </div>
                         <div className="mt-6 w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
-                            <div className="bg-tertiary h-full rounded-full" style={{ width: latestAssessments.stress ? `${latestAssessments.stress.score}%` : '0%' }} />
+                            <div className="bg-tertiary h-full rounded-full" style={{ width: latestAssessments.stress_pss10 ? `${Math.min((latestAssessments.stress_pss10.score / 40) * 100, 100)}%` : '0%' }} />
                         </div>
                     </div>
                 </section>
@@ -124,22 +196,28 @@ export default function Dashboard({ profile, latestAssessments }: DashboardProps
                     <div className="lg:col-span-2 bg-surface-container-lowest rounded-lg p-10 shadow-[0_10px_30px_-5px_rgba(2,103,131,0.06)]">
                         <div className="flex justify-between items-center mb-10">
                             <h2 className="font-headline-md text-on-surface">Grafik Perkembangan</h2>
-                            <select className="bg-surface-container-low border-none rounded-full px-6 py-1 font-label-md text-on-surface-variant focus:ring-primary">
-                                <option>7 Hari Terakhir</option>
-                                <option>30 Hari Terakhir</option>
-                            </select>
+                            <span className="font-label-sm text-on-surface-variant">{historyByType.reduce((sum, t) => sum + t.data.length, 0)} hasil</span>
                         </div>
-                        <div className="relative h-[250px] w-full bg-surface-container-low/50 rounded-lg overflow-hidden">
-                            <div className="absolute inset-0 flex items-end px-6 pb-6">
-                                <div className="w-full flex items-end justify-between h-4/5 gap-2">
-                                    {[40, 55, 45, 70, 50, 85, 65].map((h, i) => (
-                                        <div key={i} className="w-full bg-primary/20 hover:bg-primary/40 transition-all rounded-t-lg" style={{ height: `${h}%` }} />
-                                    ))}
+                        <div className="h-[250px] w-full">
+                            {historyByType.some(t => t.data.length > 0) ? (
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#e9e8e5" />
+                                        <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#3d4a40' }} axisLine={false} tickLine={false} />
+                                        <YAxis tick={{ fontSize: 12, fill: '#3d4a40' }} axisLine={false} tickLine={false} />
+                                        <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #bccabd', boxShadow: '0 8px 30px rgba(2,103,131,0.06)' }} />
+                                        <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+                                        <Bar dataKey="bmi" name="BMI" fill="#006d3e" radius={[4, 4, 0, 0]} />
+                                        <Bar dataKey="diabetes_risk" name="Diabetes" fill="#026783" radius={[4, 4, 0, 0]} />
+                                        <Bar dataKey="stress_pss10" name="Stres" fill="#4b6454" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="h-full flex flex-col items-center justify-center text-on-surface-variant">
+                                    <span className="material-symbols-outlined text-[48px] text-on-surface-variant/30">bar_chart</span>
+                                    <p className="font-body-md mt-3">Belum ada data. Lakukan skrining untuk melihat grafik perkembangan.</p>
                                 </div>
-                            </div>
-                        </div>
-                        <div className="mt-6 flex justify-between px-6 text-on-surface-variant font-label-sm">
-                            <span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span>
+                            )}
                         </div>
                     </div>
 
@@ -162,20 +240,52 @@ export default function Dashboard({ profile, latestAssessments }: DashboardProps
                 </section>
 
                 <section className="space-y-6">
-                    <h2 className="font-headline-md text-on-surface">Tips Kesehatan Untukmu</h2>
-                    <div className="flex overflow-x-auto pb-6 gap-6 no-scrollbar scroll-smooth">
-                        {tips.map((tip, i) => (
-                            <div key={i} className="min-w-[300px] md:min-w-[350px] bg-surface-container-low rounded-lg overflow-hidden flex flex-col">
-                                <div className="h-40 bg-gradient-to-br from-primary-container/20 to-secondary-container/20 flex items-center justify-center">
-                                    <span className={`material-symbols-outlined text-[64px] ${tip.color}`}>{tip.icon}</span>
-                                </div>
-                                <div className="p-6 flex flex-col gap-3">
-                                    <span className={`font-label-md ${tip.color}`}>{tip.label}</span>
-                                    <h4 className="font-headline-md text-[18px]">{tip.title}</h4>
-                                    <p className="text-on-surface-variant font-body-md line-clamp-2">{tip.desc}</p>
-                                </div>
-                            </div>
-                        ))}
+                    <div className="flex items-center justify-between">
+                        <h2 className="font-headline-md text-on-surface">Tips Kesehatan Untukmu</h2>
+                        <span className="font-label-sm text-on-surface-variant/50 flex items-center gap-1">
+                            <span className="material-symbols-outlined text-[14px]">schedule</span>
+                            {new Date(tipsUpdatedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                    </div>
+                    <div className="flex overflow-x-auto pb-6 gap-6 scroll-smooth">
+                        {latestTips.length === 0 ? (
+                            <p className="font-body-md text-on-surface-variant">Belum ada tips kesehatan. Coba lagi nanti.</p>
+                        ) : (
+                            latestTips.map((tip) => {
+                                const grad = categoryGradients[tip.category] ?? categoryGradients.general;
+                                const icon = categoryIcons[tip.category] ?? categoryIcons.general;
+                                return (
+                                    <Link key={tip.id} href={`/tips/${tip.slug}`}
+                                        className="flex-shrink-0 w-[300px] md:w-[350px] bg-surface-container-low rounded-lg overflow-hidden flex flex-col group hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer">
+                                        <div className={`h-40 flex items-center justify-center relative overflow-hidden`}>
+                                            {tip.image_url ? (
+                                                <img src={tip.image_url} alt={tip.title}
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                    loading="lazy"
+                                                />
+                                            ) : (
+                                                <div className={`w-full h-full ${categoryAnimatedGradients[tip.category] ?? categoryAnimatedGradients.general} flex items-center justify-center`}>
+                                                    <span className="material-symbols-outlined text-[56px] text-white/40 animate-float">{icon}</span>
+                                                </div>
+                                            )}
+                                            <span className="absolute top-3 right-3 px-2 py-1 rounded-md text-[11px] font-label-sm bg-surface/80 backdrop-blur-sm text-on-surface">
+                                                {tip.source}
+                                            </span>
+                                        </div>
+                                        <div className="p-5 flex flex-col gap-2 flex-1">
+                                            <div className="flex items-center gap-2">
+                                                <span className="px-2 py-0.5 rounded text-[11px] font-label-sm bg-primary/10 text-primary">
+                                                    {tip.category === 'general' ? 'info' : tip.category}
+                                                </span>
+                                                <span className="font-label-sm text-on-surface-variant/60">{timeAgo(tip.published_at)}</span>
+                                            </div>
+                                            <h4 className="font-headline-sm text-[16px] text-on-surface line-clamp-2 group-hover:text-primary transition-colors">{tip.title_id ?? tip.title}</h4>
+                                            <p className="text-on-surface-variant font-body-sm line-clamp-2">{tip.description_id ?? tip.description}</p>
+                                        </div>
+                                    </Link>
+                                );
+                            })
+                        )}
                     </div>
                 </section>
 

@@ -1,15 +1,51 @@
+import { useState } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
-import type { UserProfile } from '@/types';
+import type { UserProfile, HealthAssessment } from '@/types';
 
 interface ProfileProps {
     profile: UserProfile;
+    latestAssessments: Record<string, HealthAssessment>;
 }
 
-export default function Complete({ profile }: ProfileProps) {
+function computeHealthScore(assessments: Record<string, HealthAssessment>): { score: number; label: string } {
+    let score = 0;
+
+    const bmi = assessments['bmi'];
+    if (bmi) {
+        const cat = bmi.category;
+        if (cat === 'normal') score += 33;
+        else if (cat === 'underweight' || cat === 'overweight') score += 17;
+    }
+
+    const diabetes = assessments['diabetes_risk'];
+    if (diabetes) {
+        if (diabetes.category === 'low') score += 33;
+        else if (diabetes.category === 'moderate') score += 17;
+    }
+
+    const stress = assessments['stress_pss10'];
+    if (stress) {
+        if (stress.category === 'low') score += 34;
+        else if (stress.category === 'moderate') score += 17;
+    }
+
+    const label = score >= 80 ? 'Baik' : score >= 50 ? 'Cukup' : score > 0 ? 'Perlu Perhatian' : 'Belum Ada Data';
+    return { score, label };
+}
+
+export default function Complete({ profile, latestAssessments }: ProfileProps) {
+    const healthScore = computeHealthScore(latestAssessments);
+    const [notice, setNotice] = useState('');
+
+    const showNotice = (msg: string) => {
+        setNotice(msg);
+        setTimeout(() => setNotice(''), 3000);
+    };
+
     const { data, setData, put, processing, errors } = useForm({
         full_name: profile?.full_name ?? '',
-        birth_date: profile?.birth_date ?? '',
+        birth_date: profile?.birth_date ? String(profile.birth_date).split('T')[0] : '',
         gender: profile?.gender ?? 'male',
         height_cm: profile?.height_cm?.toString() ?? '',
         weight_kg: profile?.weight_kg?.toString() ?? '',
@@ -18,7 +54,11 @@ export default function Complete({ profile }: ProfileProps) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        put('/api/profile');
+        put('/api/profile', {
+            onSuccess: () => {
+                showNotice('Profil berhasil disimpan');
+            },
+        });
     };
 
     return (
@@ -102,16 +142,37 @@ export default function Complete({ profile }: ProfileProps) {
                                 {processing ? 'Menyimpan...' : 'Simpan Profil'}
                             </button>
                         </form>
+                        {notice && (
+                            <div className="mt-4 p-3 bg-primary/10 text-primary rounded-lg font-body-sm text-center animate-fade-in">
+                                {notice}
+                            </div>
+                        )}
                     </div>
 
                     <div className="md:col-span-4 space-y-6">
                         <div className="bg-primary-container text-on-primary-container rounded-lg p-6 shadow-[0_10px_30px_-5px_rgba(2,103,131,0.06)] flex flex-col justify-between overflow-hidden relative">
                             <div className="z-10">
                                 <h3 className="font-label-md uppercase opacity-80">Skor Kesehatan</h3>
-                                <p className="font-display-lg">--<span className="font-headline-md">/100</span></p>
+                                <p className="font-display-lg">{healthScore.score}<span className="font-headline-md">/100</span></p>
+                                <span className={`inline-block mt-2 px-3 py-0.5 rounded-full font-label-sm ${
+                                    healthScore.score >= 80 ? 'bg-white/20 text-white' :
+                                    healthScore.score >= 50 ? 'bg-white/15 text-white' :
+                                    'bg-white/10 text-white/80'
+                                }`}>{healthScore.label}</span>
                             </div>
-                            <div className="z-10 mt-6">
-                                <p className="font-body-md">Lengkapi profil untuk melihat skor kesehatan.</p>
+                            <div className="z-10 mt-6 space-y-2">
+                                {latestAssessments['bmi'] && (
+                                    <p className="font-body-sm opacity-80">BMI: {latestAssessments['bmi'].score} ({latestAssessments['bmi'].category === 'normal' ? 'Normal' : latestAssessments['bmi'].category})</p>
+                                )}
+                                {latestAssessments['diabetes_risk'] && (
+                                    <p className="font-body-sm opacity-80">Diabetes: {latestAssessments['diabetes_risk'].category === 'low' ? 'Rendah' : latestAssessments['diabetes_risk'].category === 'moderate' ? 'Sedang' : 'Tinggi'}</p>
+                                )}
+                                {latestAssessments['stress_pss10'] && (
+                                    <p className="font-body-sm opacity-80">Stres: {latestAssessments['stress_pss10'].category === 'low' ? 'Rendah' : latestAssessments['stress_pss10'].category === 'moderate' ? 'Sedang' : 'Tinggi'}</p>
+                                )}
+                                {Object.keys(latestAssessments).length === 0 && (
+                                    <p className="font-body-md">Lengkapi skrining untuk melihat skor kesehatan.</p>
+                                )}
                             </div>
                             <div className="absolute -right-8 -top-8 w-32 h-32 bg-on-primary-fixed-variant/10 rounded-full blur-2xl" />
                         </div>
@@ -119,14 +180,14 @@ export default function Complete({ profile }: ProfileProps) {
                         <div className="bg-surface-container-lowest rounded-lg p-6 shadow-[0_10px_30px_-5px_rgba(2,103,131,0.06)]">
                             <h2 className="font-headline-md text-primary mb-6">Pengaturan</h2>
                             <div className="space-y-2">
-                                <button className="w-full flex items-center justify-between p-3 hover:bg-surface-container transition-colors rounded-md group">
+                                <button onClick={() => showNotice('Fitur notifikasi akan segera hadir')} className="w-full flex items-center justify-between p-3 hover:bg-surface-container transition-colors rounded-md group">
                                     <div className="flex items-center gap-3">
                                         <span className="material-symbols-outlined text-outline group-hover:text-primary">notifications_active</span>
                                         <span className="font-body-md">Notifikasi</span>
                                     </div>
                                     <span className="material-symbols-outlined text-outline">chevron_right</span>
                                 </button>
-                                <button className="w-full flex items-center justify-between p-3 hover:bg-surface-container transition-colors rounded-md group">
+                                <button onClick={() => showNotice('Fitur bahasa akan segera hadir')} className="w-full flex items-center justify-between p-3 hover:bg-surface-container transition-colors rounded-md group">
                                     <div className="flex items-center gap-3">
                                         <span className="material-symbols-outlined text-outline group-hover:text-primary">language</span>
                                         <span className="font-body-md">Bahasa</span>
@@ -134,11 +195,16 @@ export default function Complete({ profile }: ProfileProps) {
                                     <span className="material-symbols-outlined text-outline">chevron_right</span>
                                 </button>
                                 <hr className="my-6 border-outline-variant/30" />
-                                <Link href="/login" method="post" as="button"
+                                <Link href="/logout" method="post" as="button"
                                     className="w-full flex items-center justify-center gap-2 text-error font-label-md py-2 hover:bg-error-container/10 rounded-md transition-colors">
                                     <span className="material-symbols-outlined text-[20px]">logout</span>
                                     Keluar
                                 </Link>
+                                {notice && (
+                                    <div className="mt-4 p-3 bg-surface-container-high rounded-lg font-body-sm text-on-surface text-center transition-all">
+                                        {notice}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

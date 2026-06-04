@@ -26,8 +26,7 @@ class VerifySupabaseToken
             return redirect('/login');
         }
 
-        $response = Http::withoutVerifying()
-            ->withToken($token)
+        $response = Http::withToken($token)
             ->withHeaders(['apikey' => config('services.supabase.anon_key')])
             ->get(config('services.supabase.url') . '/auth/v1/user');
 

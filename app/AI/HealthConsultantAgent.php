@@ -3,8 +3,12 @@
 namespace App\AI;
 
 use App\Events\MessageChunk;
-use Illuminate\Support\Facades\AI;
+use App\Services\ImageAnalyzer;
 use Illuminate\Support\Facades\Cache;
+use Laravel\Ai\Streaming\Events\StreamEvent;
+use Laravel\Ai\Streaming\Events\TextDelta;
+
+use function Laravel\Ai\agent;
 
 class HealthConsultantAgent
 {
@@ -22,21 +26,33 @@ CORE RULES:
 7. Be empathetic, clear, and use simple language accessible to all ages
 PROMPT;
 
-    public function ask(string $userId, string $sessionId, string $message): string
+    public function ask(string $userId, string $sessionId, string $message, array $imageUrls = []): string
     {
         $cacheKey = "chat:{$sessionId}";
         $history = Cache::get($cacheKey, []);
 
-        $fullResponse = '';
+        if (!empty($imageUrls)) {
+            $analyzer = app(ImageAnalyzer::class);
+            $descriptions = [];
+            foreach ($imageUrls as $url) {
+                $descriptions[] = $analyzer->describe($url);
+            }
+            $context = "Pengguna melampirkan gambar dengan deskripsi berikut:\n" . implode("\n---\n", $descriptions);
+            $message = $context . "\n\nPesan pengguna: " . $message;
+        }
 
-        AI::chat()
-            ->system($this->systemPrompt)
-            ->messages(array_merge($history, [['role' => 'user', 'content' => $message]]))
-            ->stream(function (string $chunk, array $metadata) use ($userId, $sessionId, &$fullResponse) {
-                $fullResponse .= $chunk;
-                broadcast(new MessageChunk($userId, $sessionId, $chunk));
-            })
-            ->create();
+        $stream = agent(
+            instructions: $this->systemPrompt,
+            messages: $history,
+        )->stream($message);
+
+        $stream->each(function (StreamEvent $event) use ($userId, $sessionId) {
+            if ($event instanceof TextDelta) {
+                broadcast(new MessageChunk($userId, $sessionId, $event->delta));
+            }
+        });
+
+        $fullResponse = $stream->text ?? '';
 
         $history[] = ['role' => 'user', 'content' => $message];
         $history[] = ['role' => 'assistant', 'content' => $fullResponse];

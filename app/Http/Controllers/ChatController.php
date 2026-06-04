@@ -34,10 +34,17 @@ class ChatController extends Controller
         $data = $request->validate([
             'message' => 'required|string|max:2000',
             'session_id' => 'nullable|string',
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'string',
         ]);
 
         $userId = auth()->id();
         $sessionId = $data['session_id'] ?? Str::uuid()->toString();
+
+        $imageUrls = [];
+        if (!empty($data['attachments'])) {
+            $imageUrls = array_values(array_filter($data['attachments']));
+        }
 
         ChatLog::create([
             'id' => Str::uuid(),
@@ -47,7 +54,7 @@ class ChatController extends Controller
             'content' => $data['message'],
         ]);
 
-        $response = $agent->ask($userId, $sessionId, $data['message']);
+        $response = $agent->ask($userId, $sessionId, $data['message'], $imageUrls);
 
         ChatLog::create([
             'id' => Str::uuid(),
@@ -59,6 +66,7 @@ class ChatController extends Controller
 
         return response()->json([
             'session_id' => $sessionId,
+            'content' => $response,
         ]);
     }
 
@@ -72,5 +80,32 @@ class ChatController extends Controller
             ->get(['role', 'content', 'created_at']);
 
         return response()->json($messages);
+    }
+
+    public function destroySession(string $sessionId)
+    {
+        $userId = auth()->id();
+
+        ChatLog::where('user_id', $userId)
+            ->where('session_id', $sessionId)
+            ->delete();
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function upload(Request $request)
+    {
+        $data = $request->validate([
+            'file' => 'required|file|mimes:jpg,jpeg,png,gif,webp,mp4,mov,avi,pdf,doc,docx,txt|max:10240',
+        ]);
+
+        $path = $request->file('file')->store('chat-attachments', 'public');
+
+        return response()->json([
+            'url' => asset('storage/' . $path),
+            'name' => $request->file('file')->getClientOriginalName(),
+            'size' => $request->file('file')->getSize(),
+            'mime' => $request->file('file')->getMimeType(),
+        ]);
     }
 }

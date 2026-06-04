@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import AppLayout from '@/Layouts/AppLayout';
 
@@ -27,20 +27,30 @@ export default function Stress() {
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [result, setResult] = useState<{ score: number; category: string; recommendation: string } | null>(null);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
     const allAnswered = stressQuestions.every((_, i) => answers[`q${i + 1}`] !== undefined);
 
     const handleSubmit = async () => {
         setLoading(true);
+        setError('');
         try {
+            const headers: Record<string, string> = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+
             const res = await fetch('/api/assessments/stress', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('supabase_token')}` },
+                headers,
                 body: JSON.stringify(answers),
             });
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.message || `Gagal memproses (${res.status})`);
+            }
             const data = await res.json();
             setResult(data);
-        } catch { /* ignore */ } finally { setLoading(false); }
+        } catch (e) {
+            setError(e instanceof Error ? e.message : 'Terjadi kesalahan');
+        } finally { setLoading(false); }
     };
 
     if (result) {
@@ -60,10 +70,16 @@ export default function Stress() {
                             'bg-error-container/50 text-error'
                         }`}>{result.category === 'low' ? 'Rendah' : result.category === 'moderate' ? 'Sedang' : 'Tinggi'}</span>
                         <p className="font-body-md text-on-surface mt-4 leading-relaxed">{result.recommendation}</p>
-                        <button onClick={() => { setResult(null); setAnswers({}); }}
-                            className="mt-6 px-16 py-6 bg-primary text-on-primary rounded-full font-label-md shadow-lg hover:scale-105 active:scale-95 transition-all">
-                            Ulangi Tes
-                        </button>
+                        <div className="mt-6 flex flex-col items-center gap-3">
+                            <button onClick={() => { setResult(null); setAnswers({}); }}
+                                className="w-full px-16 py-6 bg-primary text-on-primary rounded-full font-label-md shadow-lg hover:scale-105 active:scale-95 transition-all">
+                                Ulangi Tes
+                            </button>
+                            <button onClick={() => router.visit('/dashboard')}
+                                className="w-full px-16 py-6 border border-outline text-on-surface rounded-full font-label-md hover:bg-surface-container-low transition-all active:scale-95">
+                                Kembali ke Dashboard
+                            </button>
+                        </div>
                     </div>
                 </div>
             </AppLayout>
@@ -95,6 +111,11 @@ export default function Stress() {
                     </div>
                 ))}
 
+                {error && (
+                    <div className="p-4 bg-error-container/20 text-error rounded-lg font-body-md text-center">
+                        {error}
+                    </div>
+                )}
                 <button disabled={!allAnswered || loading} onClick={handleSubmit}
                     className="w-full py-3 bg-primary text-on-primary rounded-full font-label-md shadow-lg hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
                     {loading ? 'Menghitung...' : 'Lihat Hasil'}

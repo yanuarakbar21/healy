@@ -1,0 +1,15 @@
+/node_modules
+/vendor
+/.env
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+/public/build
+public/storage
+.git
+.gitignore
+*.md
+tests
+playwright-report
+test-results

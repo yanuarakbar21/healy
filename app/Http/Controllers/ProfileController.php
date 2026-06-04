@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\HealthAssessment;
 use App\Models\Profile;
 use Illuminate\Http\Request;
 
@@ -9,8 +10,17 @@ class ProfileController extends Controller
 {
     public function edit()
     {
+        $user = auth()->user();
+
+        $assessments = HealthAssessment::where('user_id', $user->id)
+            ->orderBy('taken_at', 'desc')
+            ->get()
+            ->groupBy('type')
+            ->map(fn ($items) => $items->first());
+
         return inertia('Profile/Complete', [
-            'profile' => auth()->user()->profile,
+            'profile' => $user->profile,
+            'latestAssessments' => $assessments,
         ]);
     }
 
@@ -26,8 +36,16 @@ class ProfileController extends Controller
         ]);
 
         $profile = auth()->user()->profile;
-        $profile->update($data);
 
-        return redirect()->route('dashboard');
+        if (!$profile) {
+            Profile::create([
+                'id' => auth()->id(),
+                ...$data,
+            ]);
+        } else {
+            $profile->update($data);
+        }
+
+        return redirect()->route('profile.edit');
     }
 }

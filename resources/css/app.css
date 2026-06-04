@@ -168,3 +168,57 @@
     content: '|';
     animation: blink 1s infinite;
 }
+
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes scale-in {
+    from { opacity: 0; transform: scale(0.92) translateY(8px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-fade-in {
+    animation: fade-in 0.2s ease-out;
+}
+.animate-scale-in {
+    animation: scale-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+.animate-float {
+    animation: float 3s ease-in-out infinite;
+}
+
+.animated-grad-disease {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24, #ff6b6b, #c0392b);
+    background-size: 400% 400%;
+    animation: grad-shift 8s ease infinite;
+}
+.animated-grad-nutrition {
+    background: linear-gradient(135deg, #00b894, #00cec9, #55efc4, #00b894);
+    background-size: 400% 400%;
+    animation: grad-shift 8s ease infinite;
+}
+.animated-grad-mental {
+    background: linear-gradient(135deg, #a29bfe, #6c5ce7, #fd79a8, #a29bfe);
+    background-size: 400% 400%;
+    animation: grad-shift 8s ease infinite;
+}
+.animated-grad-exercise {
+    background: linear-gradient(135deg, #fdcb6e, #e17055, #f39c12, #fdcb6e);
+    background-size: 400% 400%;
+    animation: grad-shift 8s ease infinite;
+}
+.animated-grad-general {
+    background: linear-gradient(135deg, #81ecec, #00cec9, #74b9ff, #81ecec);
+    background-size: 400% 400%;
+    animation: grad-shift 8s ease infinite;
+}
+@keyframes grad-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}

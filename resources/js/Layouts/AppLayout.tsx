@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
+import { createEcho } from '@/hooks/useReverb';
 
 interface AppLayoutProps {
     children: ReactNode;
@@ -13,8 +14,26 @@ const navItems = [
 ];
 
 export default function AppLayout({ children }: AppLayoutProps) {
-    const { url } = usePage();
+    const { url, props: inertiaProps } = usePage();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [notice, setNotice] = useState('');
+
+    const showNotice = (msg: string) => {
+        setNotice(msg);
+        setTimeout(() => setNotice(''), 3000);
+    };
+
+    useEffect(() => {
+        const auth = (inertiaProps as any).auth;
+        if (auth?.user?.id && !(window as any).Echo) {
+            const token = localStorage.getItem('supabase_token');
+            if (token) {
+                const echo = createEcho(auth.user.id, token);
+                (window as any).Echo = echo;
+                (window as any).userId = auth.user.id;
+            }
+        }
+    }, [(inertiaProps as any).auth?.user?.id]);
 
     return (
         <div className="min-h-screen bg-surface flex">
@@ -59,15 +78,19 @@ export default function AppLayout({ children }: AppLayoutProps) {
                         </span>
                     </button>
                     <div className="flex-1" />
-                    <div className="flex items-center gap-3">
-                        <button className="material-symbols-outlined p-2 rounded-full hover:bg-surface-container transition-colors text-on-surface-variant">
+                    <div className="flex items-center gap-3 relative">
+                        <button onClick={() => showNotice('Fitur notifikasi akan segera hadir')}
+                            className="material-symbols-outlined p-2 rounded-full hover:bg-surface-container transition-colors text-on-surface-variant">
                             notifications
                         </button>
-                        <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-primary-container bg-surface-container">
-                            <span className="material-symbols-outlined text-on-surface-variant flex items-center justify-center h-full">
-                                person
-                            </span>
-                        </div>
+                        <Link href="/profile" className="w-9 h-9 rounded-full border-2 border-primary-container bg-surface-container flex items-center justify-center overflow-hidden hover:opacity-80 transition-opacity">
+                            <span className="material-symbols-outlined text-on-surface-variant text-xl leading-none">account_circle</span>
+                        </Link>
+                        {notice && (
+                            <div className="absolute top-full right-0 mt-2 w-64 p-3 bg-surface-container-high rounded-lg shadow-lg font-body-sm text-on-surface text-center z-50">
+                                {notice}
+                            </div>
+                        )}
                     </div>
                 </header>
 

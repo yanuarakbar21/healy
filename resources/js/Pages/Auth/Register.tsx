@@ -19,13 +19,20 @@ export default function Register() {
         });
         if (authError) { setError(authError.message); setLoading(false); return; }
         if (data?.user?.identities?.length === 0) { setError('Email sudah terdaftar'); setLoading(false); return; }
-        setLoading(false);
         if (data?.session) {
             localStorage.setItem('supabase_token', data.session.access_token);
             const res = await fetch('/api/auth/callback', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token: data.session.access_token }),
+            });
+            if (res.ok) { window.location.href = '/dashboard'; return; }
+        }
+        if (data?.user?.id) {
+            const res = await fetch('/api/auth/confirm-registration', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: data.user.id }),
             });
             if (res.ok) { window.location.href = '/dashboard'; return; }
         }

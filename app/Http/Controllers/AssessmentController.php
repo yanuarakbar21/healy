@@ -53,6 +53,11 @@ class AssessmentController extends Controller
             'recommendation' => $result->recommendation,
         ]);
 
+        auth()->user()->profile->update([
+            'height_cm' => $data['height_cm'],
+            'weight_kg' => $data['weight_kg'],
+        ]);
+
         return response()->json($assessment);
     }
 

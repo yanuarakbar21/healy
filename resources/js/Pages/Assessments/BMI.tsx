@@ -21,7 +21,7 @@ export default function BMI({ profileHeight, profileWeight }: BMIProps) {
         try {
             const res = await fetch('/api/assessments/bmi', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('supabase_token')}` },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ height_cm: height, weight_kg: weight }),
             });
             if (!res.ok) throw new Error('Invalid input');

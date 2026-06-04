@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->validateCsrfTokens(except: [
             'api/auth/callback',
+            'api/chat/upload',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

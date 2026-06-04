@@ -41,4 +41,8 @@ return [
         'service_key' => env('SUPABASE_SERVICE_KEY'),
     ],
 
+    'github' => [
+        'token' => env('GITHUB_TOKEN'),
+    ],
+
 ];

@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import AppLayout from '@/Layouts/AppLayout';
 
@@ -12,34 +12,50 @@ const questions = [
     { id: 'high_blood_sugar', text: 'Apakah Anda pernah diberi tahu memiliki gula darah tinggi?', category: 'Kondisi Medis', options: [['no', 'Tidak'], ['yes', 'Ya']] },
 ];
 
-const icons = ['person', 'family_history', 'directions_run', 'nutrition', 'straighten', 'bloodpressure', 'monitor_heart'];
+const icons = ['person', 'family_history', 'directions_run', 'nutrition', 'straighten', 'heart_plus', 'monitor_heart'];
 
 export default function Diabetes() {
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [step, setStep] = useState(0);
     const [result, setResult] = useState<{ score: number; category: string; recommendation: string } | null>(null);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
     const current = questions[step];
 
     const handleAnswer = (value: string) => {
         setAnswers(prev => ({ ...prev, [current.id]: value }));
+        setError('');
+    };
+
+    const handleNext = () => {
         if (step < questions.length - 1) setStep(step + 1);
     };
 
-    const handlePrev = () => { if (step > 0) setStep(step - 1); };
+    const handlePrev = () => {
+        if (step > 0) setStep(step - 1);
+    };
 
     const handleSubmit = async () => {
         setLoading(true);
+        setError('');
         try {
+            const headers: Record<string, string> = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+
             const res = await fetch('/api/assessments/diabetes', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('supabase_token')}` },
+                headers,
                 body: JSON.stringify(answers),
             });
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.message || `Gagal memproses (${res.status})`);
+            }
             const data = await res.json();
             setResult(data);
-        } catch { /* ignore */ } finally { setLoading(false); }
+        } catch (e) {
+            setError(e instanceof Error ? e.message : 'Terjadi kesalahan');
+        } finally { setLoading(false); }
     };
 
     if (result) {
@@ -59,10 +75,16 @@ export default function Diabetes() {
                             'bg-error-container/50 text-error'
                         }`}>{result.category === 'low' ? 'Rendah' : result.category === 'moderate' ? 'Sedang' : 'Tinggi'}</span>
                         <p className="font-body-md text-on-surface mt-4 leading-relaxed">{result.recommendation}</p>
-                        <button onClick={() => { setResult(null); setStep(0); setAnswers({}); }}
-                            className="mt-6 px-16 py-6 bg-primary text-on-primary rounded-full font-label-md shadow-lg hover:scale-105 active:scale-95 transition-all">
-                            Ulangi Tes
-                        </button>
+                        <div className="mt-6 flex flex-col items-center gap-3">
+                            <button onClick={() => { setResult(null); setStep(0); setAnswers({}); }}
+                                className="w-full px-16 py-6 bg-primary text-on-primary rounded-full font-label-md shadow-lg hover:scale-105 active:scale-95 transition-all">
+                                Ulangi Tes
+                            </button>
+                            <button onClick={() => router.visit('/dashboard')}
+                                className="w-full px-16 py-6 border border-outline text-on-surface rounded-full font-label-md hover:bg-surface-container-low transition-all active:scale-95">
+                                Kembali ke Dashboard
+                            </button>
+                        </div>
                     </div>
                 </div>
             </AppLayout>
@@ -116,7 +138,12 @@ export default function Diabetes() {
                     </div>
                 </div>
 
-                <div className="mt-10 flex justify-between items-center w-full">
+                {error && (
+                    <div className="mt-6 p-4 bg-error-container/20 text-error rounded-lg font-body-md text-center">
+                        {error}
+                    </div>
+                )}
+                <div className="mt-6 flex justify-between items-center w-full">
                     <button onClick={handlePrev} disabled={step === 0}
                         className="flex items-center gap-1 px-10 py-6 rounded-full border border-outline text-on-surface font-label-md hover:bg-surface-container-low transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">
                         <span className="material-symbols-outlined text-[18px]">arrow_back</span>
@@ -128,7 +155,11 @@ export default function Diabetes() {
                             {loading ? 'Menghitung...' : 'Lihat Hasil'}
                         </button>
                     ) : (
-                        <div />
+                        <button onClick={handleNext} disabled={!answers[current.id]}
+                            className="flex items-center gap-1 px-16 py-6 rounded-full bg-primary text-on-primary font-label-md shadow-lg transition-all hover:opacity-90 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">
+                            Selanjutnya
+                            <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                        </button>
                     )}
                 </div>
             </div>

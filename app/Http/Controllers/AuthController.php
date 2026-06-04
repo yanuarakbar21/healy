@@ -14,8 +14,7 @@ class AuthController extends Controller
     {
         $request->validate(['token' => 'required|string']);
 
-        $response = Http::withoutVerifying()
-            ->withToken($request->token)
+        $response = Http::withToken($request->token)
             ->withHeaders(['apikey' => config('services.supabase.anon_key')])
             ->get(config('services.supabase.url') . '/auth/v1/user');
 
@@ -64,6 +63,50 @@ class AuthController extends Controller
             'id' => $user->id,
             'email' => $user->email,
             'full_name' => $user->profile?->full_name,
+        ]);
+    }
+
+    public function confirmRegistration(Request $request)
+    {
+        $request->validate(['user_id' => 'required|string']);
+
+        $response = Http::withToken(config('services.supabase.service_key'))
+            ->withHeaders(['apikey' => config('services.supabase.anon_key')])
+            ->put(config('services.supabase.url') . '/auth/v1/admin/users/' . $request->user_id, [
+                'email_confirm' => true,
+            ]);
+
+        if ($response->failed()) {
+            Log::error('Auto-confirm failed', ['user_id' => $request->user_id, 'response' => $response->body()]);
+            return response()->json(['message' => 'Gagal konfirmasi'], 500);
+        }
+
+        $supabaseUser = $response->json();
+
+        $user = User::firstOrCreate(
+            ['id' => $supabaseUser['id']],
+            ['email' => $supabaseUser['email'] ?? '']
+        );
+
+        Profile::firstOrCreate(
+            ['id' => $supabaseUser['id']],
+            [
+                'full_name' => $supabaseUser['user_metadata']['full_name']
+                    ?? $supabaseUser['email'] ?? '',
+                'birth_date' => now()->subYears(25),
+                'gender' => 'other',
+            ]
+        );
+
+        auth()->login($user);
+        $request->session()->regenerate();
+
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'email' => $user->email,
+                'full_name' => $user->profile?->full_name,
+            ],
         ]);
     }
 
